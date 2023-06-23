@@ -1,0 +1,46 @@
+version: "2.0"
+services:
+  ConfigService:
+    container_name: configservice
+    build: ./ConfigService
+    ports:
+      - "8888:8888"
+    hostname: ConfigService
+    environment:
+      - server.port=8888
+      - spring.cloud.config.server.git.uri=C:/Users/medde/cloud-conf
+    image: "configservice"
+
+  ReservationPilote:
+    container_name: reservationpilotemicroservice
+    build: ./ReservationPiloteMicroservice
+    ports:
+      - "8083:8083"
+    hostname: ReservationPiloteMicroservice
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=eureka-server
+    image: "reservationpilotemicroservice"
+    depends_on:
+      - Eureka
+
+  Eureka:
+    container_name: eureka-server
+    build: ./eureka-server
+    ports:
+      - "8761:8761"
+    hostname: eureka-server
+    image: "eureka-server"
+    environment:   
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka-server
+
+  Gateway:
+    container_name: gateway
+    build: ./gateway
+    ports:
+      - "8762:8762"
+    hostname: gateway
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    image: "gateway"
+    depends_on:
+      - Eureka
