@@ -8,7 +8,7 @@ services:
     hostname: ConfigService
     environment:
       - server.port=8888
-      - spring.cloud.config.server.git.uri=C:/Users/medde/cloud-conf
+      - spring.cloud.config.server.git.uri=https://github.com/Ameddeb22/microservice.git
     image: "configservice"
 
   ReservationPilote:
@@ -18,8 +18,21 @@ services:
       - "8083:8083"
     hostname: ReservationPiloteMicroservice
     environment:
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=eureka-server
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     image: "reservationpilotemicroservice"
+    depends_on:
+      - Eureka
+  auth:
+    container_name: authenticationmicroservice
+    build: ./MonoRepoWithSpring/authenticationmicroservice
+    ports:
+      - "8081:8081"
+    hostname: authenticationmicroservice
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
+      - EUREKA_HOST=eureka
+      - MYSQL_HOST=mysql
+    image: authenticationmicroservice
     depends_on:
       - Eureka
 
@@ -31,8 +44,7 @@ services:
     hostname: eureka-server
     image: "eureka-server"
     environment:   
-      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka-server
-
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
   Gateway:
     container_name: gateway
     build: ./gateway
@@ -44,3 +56,36 @@ services:
     image: "gateway"
     depends_on:
       - Eureka
+      
+  node:
+    container_name: nodeapp
+    build: ./MonoRepoWithJS/api
+    ports:
+      - "3000:3000"
+    hostname: nodeapp
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka:8761/eureka/
+    image: nodeapp
+    depends_on:
+      - Eureka
+      - mongo
+    command: npm start
+  mongo:
+    container_name: mongo
+    image: "mongo:5-focal"
+    ports:
+      - "27017:27017"
+    hostname: mongodb
+    depends_on:
+      - "Eureka"
+    volumes:
+      - mongodata:/data/db
+  mysql:
+    image: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=0000
+      - MYSQL_DATABASE=userdb
+    ports:
+      - "3306:3306"
+volumes:
+  mongodata:
